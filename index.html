@@ -150,7 +150,7 @@ function PublicView({toast}){
       if(r.error){toast(r.error,"err");setBuying(false);return}
       setDone({buyer:{name:name.trim(),phone:phone.trim()},numbers:sel,total:sel.length*selRifa.price_per_number});
       setStep("pix");toast("✅ Números reservados!","ok");
-    }catch(e){toast("Erro ao reservar","err")}finally{setBuying(false)}
+    }catch(e){toast(e.message||"Erro ao reservar","err")}finally{setBuying(false)}
   };
 
   const filtered=rifas.filter(r=>{if(!rifaSearch)return true;const s=rifaSearch.toUpperCase();return(r.code||"").includes(s)||r.rifa_name.toLowerCase().includes(rifaSearch.toLowerCase())});
@@ -278,11 +278,11 @@ function OrgLogin({onLogin,toast}){
 
   const doLogin=async()=>{
     if(!user.trim()||!pass){setErr("Preencha todos");return}setLd(true);
-    try{const r=await sb.rpc("org_login",{p_username:user.trim(),p_password:pass});if(r.error){setErr(r.error);setLd(false);return}onLogin(r.org,r.token)}catch(e){setErr("Erro de conexão")}finally{setLd(false)}
+    try{const r=await sb.rpc("org_login",{p_username:user.trim(),p_password:pass});if(r.error){setErr(r.error);setLd(false);return}onLogin(r.org,r.token)}catch(e){setErr(e.message||"Erro de conexão")}finally{setLd(false)}
   };
   const doReg=async()=>{
     if(!user.trim()||!pass||!name.trim()||!phone.trim()||!pix.trim()){setErr("Preencha todos");return}setLd(true);
-    try{const r=await sb.rpc("org_register",{p_username:user.trim(),p_password:pass,p_name:name.trim(),p_phone:phone.trim(),p_pix_key:pix.trim()});if(r.error){setErr(r.error);setLd(false);return}toast("✅ Conta criada! Faça login.","ok");setIsReg(false);setErr("")}catch(e){setErr("Erro")}finally{setLd(false)}
+    try{const r=await sb.rpc("org_register",{p_username:user.trim(),p_password:pass,p_name:name.trim(),p_phone:phone.trim(),p_pix_key:pix.trim()});if(r.error){setErr(r.error);setLd(false);return}toast("✅ Conta criada! Faça login.","ok");setIsReg(false);setErr("")}catch(e){setErr(e.message||"Erro")}finally{setLd(false)}
   };
 
   return(<div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"70vh",padding:16}}>
@@ -349,7 +349,7 @@ function OrgCreate({token,toast,config,onCreated}){
   const fp=config?.fee_percent||5;const rev=c.total_numbers*c.price_per_number;const fee=rev*fp/100;
   const create=async()=>{
     if(!c.rifa_name||!c.prize){toast("Preencha nome e prêmio!","err");return}setSaving(true);
-    try{const r=await sb.rpc("org_create_rifa",{p_token:token,p_code:genCode(),p_rifa_name:c.rifa_name,p_prize:c.prize,p_prize_value:parseFloat(c.prize_value)||0,p_total_numbers:c.total_numbers,p_price_per_number:c.price_per_number,p_draw_date:c.draw_date||"",p_description:c.description});if(r.error){toast(r.error,"err");return}toast("✅ Rifa criada!","ok");onCreated()}catch(e){toast("Erro","err")}finally{setSaving(false)}
+    try{const r=await sb.rpc("org_create_rifa",{p_token:token,p_code:genCode(),p_rifa_name:c.rifa_name,p_prize:c.prize,p_prize_value:parseFloat(c.prize_value)||0,p_total_numbers:c.total_numbers,p_price_per_number:c.price_per_number,p_draw_date:c.draw_date||"",p_description:c.description});if(r.error){toast(r.error,"err");return}toast("✅ Rifa criada!","ok");onCreated()}catch(e){toast(e.message||"Erro","err")}finally{setSaving(false)}
   };
   return(<Card title="➕ Nova Rifa">
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 12px"}}>
@@ -380,8 +380,8 @@ function OrgManage({rifas,token,toast,onUpdate}){
   const grouped={};buyers.forEach(n=>{const k=n.purchase_id||n.buyer_name;if(!grouped[k])grouped[k]={name:n.buyer_name,phone:n.buyer_phone,key:k,numbers:[],tp:0,tpd:0};grouped[k].numbers.push(n);if(n.paid)grouped[k].tp+=rifa.price_per_number;else grouped[k].tpd+=rifa.price_per_number});
   const list=Object.values(grouped).filter(b=>!search||b.name.toLowerCase().includes(search.toLowerCase()));
   const pad=rifa.total_numbers>99?3:2;
-  const togglePay=async(numId,paid)=>{try{await sb.rpc("org_toggle_payment",{p_token:token,p_number_id:numId});await loadB(selId);toast(paid?"⏳ Desmarcado":"✅ Pago!","ok")}catch(e){toast("Erro","err")}};
-  const markAll=async k=>{try{await sb.rpc("org_mark_all_paid",{p_token:token,p_purchase_id:k});await loadB(selId);toast("✅ Todos pagos!","ok")}catch(e){toast("Erro","err")}};
+  const togglePay=async(numId,paid)=>{try{await sb.rpc("org_toggle_payment",{p_token:token,p_number_id:numId});await loadB(selId);toast(paid?"⏳ Desmarcado":"✅ Pago!","ok")}catch(e){toast(e.message||"Erro","err")}};
+  const markAll=async k=>{try{await sb.rpc("org_mark_all_paid",{p_token:token,p_purchase_id:k});await loadB(selId);toast("✅ Todos pagos!","ok")}catch(e){toast(e.message||"Erro","err")}};
 
   return(<div style={{display:"flex",flexDirection:"column",gap:8}}>
     <div style={{display:"flex",gap:4,alignItems:"center"}}><Btn variant="ghost" size="sm" onClick={()=>setSelId(null)}>← Voltar</Btn><h3 style={{margin:0,fontSize:13}}>{rifa.code} — {rifa.rifa_name}</h3></div>
@@ -444,10 +444,10 @@ function AdminLogin({onLogin,toast}){
 
   const doSetup=async()=>{
     if(!u.trim()||p.length<8){setErr("Usuário e senha (mín 8)");return}if(p!==p2){setErr("Senhas não conferem");return}setLd(true);
-    try{const r=await sb.rpc("admin_setup",{p_username:u.trim(),p_password:p,p_pix_key:pixKey,p_pix_name:pixName});if(r.error){setErr(r.error);return}toast("✅ Admin configurado!","ok");setIsSetup(false);setErr("")}catch(e){setErr("Erro")}finally{setLd(false)}
+    try{const r=await sb.rpc("admin_setup",{p_username:u.trim(),p_password:p,p_pix_key:pixKey,p_pix_name:pixName});if(r.error){setErr(r.error);return}toast("✅ Admin configurado!","ok");setIsSetup(false);setErr("")}catch(e){setErr(e.message||"Erro")}finally{setLd(false)}
   };
   const doLogin=async()=>{
-    setLd(true);try{const r=await sb.rpc("admin_login",{p_username:u.trim(),p_password:p});if(r.error){setErr(r.error);return}onLogin(r.config,r.token)}catch(e){setErr("Erro")}finally{setLd(false)}
+    setLd(true);try{const r=await sb.rpc("admin_login",{p_username:u.trim(),p_password:p});if(r.error){setErr(r.error);return}onLogin(r.config,r.token)}catch(e){setErr(e.message||"Erro")}finally{setLd(false)}
   };
   if(checking)return<Loading text="Verificando..."/>;
   return(<div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"70vh",padding:16}}>
@@ -478,7 +478,7 @@ function AdminPanel({cfg,token,toast}){
   useEffect(()=>{load()},[]);
 
   const act=async(action,tid,data={})=>{
-    try{const r=await sb.rpc("admin_action",{p_token:token,p_action:action,p_target_id:tid,p_data:JSON.stringify(data)});if(r.error){toast(r.error,"err");return false}return true}catch(e){toast("Erro","err");return false}
+    try{const r=await sb.rpc("admin_action",{p_token:token,p_action:action,p_target_id:tid,p_data:data});if(r.error){toast(r.error,"err");return false}return true}catch(e){toast(e.message||"Erro","err");return false}
   };
 
   const tabs=[{id:"dash",l:"📊"},{id:"rifas",l:"🎟️ Rifas"},{id:"orgs",l:"👥 Orgs"},{id:"fees",l:"💎 Tarifas"}];
